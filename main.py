@@ -2,103 +2,155 @@ from products import Product
 from store import Store
 
 
-def print_menu_and_select_from_the_main_menu():
+def print_menu():
     """
-    Displays the main store menu and captures user input.
+    Prints the main store menu.
 
     Returns:
-        str: The cleaned and lowercase string of the user's menu choice.
+        str: main menu
     """
-    print("   Store Menu")
     print("-" * 10)
-    select_from_the_main_menu = input("1. List all products in store\n"
-                                      "2. Show total amount in store\n"
-                                      "3. Make an order\n"
-                                      "4. Quit\n"
-                                      "Enter your choice: ").lower().strip()
-    return select_from_the_main_menu
+    print("Store Menu")
+    print("-" * 10)
+    print("1. List all products in store\n"
+          "2. Show total amount in store\n"
+          "3. Make an order\n"
+          "4. Quit\n")
 
 
-def order_from_user(best_buy):
+def get_user_input(string: str):
+    """
+    Captures user input.
+
+    Returns:
+        str: The cleaned and lowercase string of the user's input.
+    """
+    while True:
+        user_input = input(f"{string}: ").lower().strip()
+
+        if user_input:
+            return user_input
+        print("Please enter a valid input")
+
+
+def print_list_of_product(store_instance):
+    """ Prints the list of products available to the user
+
+    Args:
+        store_instance (Store): The store instance to fetch available products from.
+
+    Returns:
+        list: A list of tuples, each containing a (Product object, quantity)."""
+    products = store_instance.get_all_products()
+    for i in range(len(products)):
+        print(f"{i + 1}. {products[i].show()}")
+
+
+def order_from_user(store_instance):
     """
     Handles the interactive process of creating a shopping list.
 
-    The user can search for products by name and specify quantities.
+    The user can search for products by index number of a product and specify quantities.
     The loop continues until the user enters '0'.
 
     Args:
-        best_buy (Store): The store instance to fetch available products from.
+        store_instance (Store): The store instance to fetch available products from.
 
     Returns:
         list: A list of tuples, each containing a (Product object, quantity).
     """
-    available_products = best_buy.get_all_products()
-    shopping_list = []
-    found_product = ""
+    shopping_list_from_user = []
+    ask_product_number = "Enter the index number of a product do you want to buy or '0' to see a total price of your order: "
+    ask_amount = "How many do you want to buy?: "
 
     while True:
-        user_choice_product = input(
-            "Enter a name of product do you want to buy or '0' to see a total price of your order "
-        ).strip()
+        available_products_in_store = store_instance.get_all_products()
+        print("\nAvailable Products:")
+        print("-" * 10)
+        print_list_of_product(store_instance)
 
-        if user_choice_product == "0":
+        if not available_products_in_store:
+            print("The store is currently empty.")
             break
 
-        if not user_choice_product:
-            print("Please enter a valid option")
+        while True:
+            try:
+                user_selected_product = int(get_user_input(ask_product_number))
+                break
+            except ValueError:
+                print("Please enter a valid number")
+
+        if user_selected_product == 0:
+            break
+
+        if user_selected_product < 1 or user_selected_product > len(available_products_in_store):
+            print("Please enter a valid number")
             continue
 
-        for product in available_products:
-            if user_choice_product.lower() in product.name.lower():
-                found_product = product
+        found_product = None
+        for i in range(len(available_products_in_store)):
+            if i == user_selected_product - 1:
+                found_product = available_products_in_store[i]
                 break
 
-        user_choice_amount = int(input("How many do you want to buy?: ").strip())
+        while True:
+            try:
+                user_choice_amount = int(get_user_input(ask_amount))
+                break
+            except ValueError:
+                print("Please enter a valid amount")
 
-        if not isinstance(user_choice_amount, int) or user_choice_amount < 0:
-            print("Please enter a valid option")
+        if user_choice_amount <= 0:
+            print("Please enter a valid amount")
             continue
 
         if found_product:
-            shopping_list.append((found_product, user_choice_amount))
-        else:
-            print("Product not found!")
+            shopping_list_from_user.append((found_product, user_choice_amount))
 
-    return shopping_list
+            print("-" * 10)
+            print(f"Added {user_choice_amount} x {found_product.name} to cart.")
+
+    try:
+        total_cost = store_instance.order(shopping_list_from_user)
+        return total_cost
+    except ValueError as e:
+        print(f"Order failed: {e}")
+        return 0.0
 
 
-def user_select_command(best_buy):
+def user_select_command(store_instance):
     """
     Main controller loop for user interaction with the store.
 
     Args:
-        best_buy (Store): The store instance to be managed.
+        store_instance (Store): The store instance to be managed.
     """
     while True:
-        select_option = print_menu_and_select_from_the_main_menu()
+        print_menu()
+        select_option = get_user_input("Enter your option: ")
 
         if select_option == "4":
             break
 
         if select_option == "1":
-            print("-" * 6)
-            for i in range(len(best_buy.get_all_products())):
-                print(f"{i + 1}. {best_buy.get_all_products()[i].show()}")
-            print("-" * 6)
+            print("-" * 10)
+            print("We have the following products:")
+            print("-" * 10)
+            print_list_of_product(store_instance)
+            print("-" * 10)
 
         elif select_option == "2":
-            print("-" * 6)
-            print(f"{best_buy.get_total_quantity()} items in store")
-            print("-" * 6)
+            print("-" * 10)
+            print(f"We have in total {store_instance.get_total_quantity()} items in the store")
+            print("-" * 10)
 
         elif select_option == "3":
-            list_of_order = order_from_user(best_buy)
-            print("-" * 6)
-            print(f"Total price of your order is: {best_buy.order(list_of_order)}")
-            print("-" * 6)
+            print("-" * 10)
+            print(f"Total price of your order is: {order_from_user(store_instance)}")
+            print("-" * 10)
+
         else:
             print("The number is out of menu")
-            continue
 
 
 def main():

@@ -10,6 +10,17 @@ class Product:
     """
 
     def __init__(self, name: str, price: float, quantity: int):
+        """
+        Initializes a new Product instance.
+
+        Args:
+            name (str): The name of the product.
+            price (float): The price of the product. Must be non-negative.
+            quantity (int): Initial stock level. Must be non-negative.
+
+        Raises:
+            ValueError: If name is empty, or if price or quantity are negative.
+        """
         if not name:
             raise ValueError("Name cannot be empty")
 
@@ -25,9 +36,22 @@ class Product:
         self.active = True
 
     def get_quantity(self) -> int:
+        """
+        Returns the current quantity of the product in stock.
+
+        Returns:
+            int: The current stock level.
+        """
         return self.quantity
 
     def set_quantity(self, quantity: int):
+        """
+        Updates the stock level and manages the product's active status.
+        Deactivates the product automatically if quantity reaches zero.
+
+        Args:
+            quantity (int): The new stock level.
+        """
         self.quantity = quantity
         if self.quantity == 0:
             self.deactivate()
@@ -35,38 +59,55 @@ class Product:
             self.activate()
 
     def is_active(self) -> bool:
-        """Returns True if the product is active, False otherwise."""
+        """
+        Checks if the product is currently active and available for sale.
+
+        Returns:
+            bool: True if active, False otherwise.
+        """
         return self.active
 
     def activate(self):
+        """Sets the product status to active."""
         self.active = True
 
     def deactivate(self):
+        """Sets the product status to inactive."""
         self.active = False
 
     def show(self):
-        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}"
+        """
+        Returns a string representation of the product.
 
-    def buy(self, quantity: int) -> float:
+        Returns:
+            str: A formatted string containing name, price, and quantity.
+        """
+        return f"{self.name}, Price: {self.price}, Quantity: {self.get_quantity()}"
+
+    def buy(self, requested_quantity: int) -> float:
         """
         Processes a purchase of a specific quantity.
 
         Args:
-            quantity (int): The amount of items to buy.
+            requested_quantity (int): The amount of items to buy.
 
         Returns:
             float: The total price of the purchase.
         """
-        if quantity <= 0:
+        if requested_quantity <= 0:
             raise ValueError("Quantity cannot be negative")
 
-        if quantity > self.quantity:
+        if requested_quantity > self.get_quantity():
             raise ValueError(
-                f"Quantity is not enough: {self.quantity} in stock"
+                f"Quantity of {self.name} is not enough: {self.get_quantity()} in stock"
+            )
+        if not self.is_active():
+            raise ValueError(
+                f"Product {self.name} is not available"
             )
 
-        new_stock = self.quantity - quantity
+        new_stock = self.get_quantity() - requested_quantity
         self.set_quantity(new_stock)
+        total_price = self.price * requested_quantity
 
-        total_price = self.price * quantity
         return total_price
